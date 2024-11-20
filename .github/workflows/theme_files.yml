@@ -15,11 +15,11 @@ jobs:
 
     - name: Build Themes
       run: |
-        mkdir -p build
+        mkdir -p output
         for dir in */; do
           # Skip unwanted folders
           [ "$dir" = ".github/" ] && continue
-          [ "$dir" = "build/" ] && continue
+          [ "$dir" = "output/" ] && continue
           # Skip files in the root directory
           [ ! -d "$dir" ] && continue
 
@@ -28,7 +28,7 @@ jobs:
 
           # Check required files exist
           if [[ -f "$dir/theme.json" ]]; then
-            find "$dir" -name "*.png" -o -name "*.jpg" | tar -cf "build/${theme_name}.tar" -C "$dir" theme.css theme.json -T -
+            find "$dir" -name "*.png" -o -name "*.jpg" | tar -cf "output/${theme_name}.tar" -C "$dir" theme.css theme.json -T -
             echo "Built $theme_name successfully."
           else
             echo "Skipping $theme_name as a required file is missing."
@@ -38,4 +38,4 @@ jobs:
     - name: Release
       uses: softprops/action-gh-release@v2
       with:
-        files: build/*.tar
+        files: output/*.tar

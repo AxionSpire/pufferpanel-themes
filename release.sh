@@ -1,9 +1,9 @@
 #! /bin/bash
-mkdir -p build
+mkdir -p output
 for dir in */; do
     # Skip unwanted folders
     [ "$dir" = ".github/" ] && continue
-    [ "$dir" = "build/" ] && continue
+    [ "$dir" = "output/" ] && continue
     # Skip files in the root directory
     [ ! -d "$dir" ] && continue
 
@@ -11,7 +11,7 @@ for dir in */; do
 
     # Check required files exist
     if [[ -f "$dir/theme.json" ]]; then
-        tar -cf "build/${theme_name}.tar" -C "$dir" theme.css theme.json img/
+        find "$dir" -name "*.png" -o -name "*.jpg" | tar -cf "output/${theme_name}.tar" -C "$dir" theme.css theme.json -T -
         echo "Built $theme_name successfully."
     else
         echo "Skipping $theme_name as a required file is missing."
