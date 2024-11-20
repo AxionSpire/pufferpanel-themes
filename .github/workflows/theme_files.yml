@@ -2,8 +2,6 @@ name: Build and Release Themes
 
 on:
   push:
-    branches:
-      - main
     tags:
       - v*.*.*
   
@@ -24,6 +22,7 @@ jobs:
         for dir in */; do
           # Skip unwanted folders
           [ "$dir" = ".github/" ] && continue
+          [ "$dir" = "build/" ] && continue
           # Skip files in the root directory
           [ ! -d "$dir" ] && continue
 
@@ -31,10 +30,10 @@ jobs:
           theme_name=$(basename "$dir")
 
           # Check required files exist
-          if [[ -f "$dir/theme.css" && -f "$dir/theme.json" ]]; then
-            tar -cf "build/${theme_name}.tar" -C "$dir" theme.css theme.json *.png *.jpg *.jpeg
+          if [[ -f "$dir/theme.json" ]]; then
+            find "$dir" -name "*.png" -o -name "*.jpg" | tar -cf "build/${theme_name}.tar" -C "$dir" theme.css theme.json -T -
           else
-            echo "Skipping $theme_name as required files are missing."
+            echo "Skipping $theme_name as a required file is missing."
           fi
         done
 
@@ -43,7 +42,7 @@ jobs:
       uses: actions/create-release@v1
       with:
         tag_name: ${{  github.ref_name }}
-        release_name: "Themes Release - ${{  github.ref_name }}"
+        release_name: "Themes Release - ${{ github.ref_name }}"
         draft: false
         prerelease: false
       env:
