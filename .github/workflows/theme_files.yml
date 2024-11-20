@@ -1,41 +1,53 @@
-# This is a basic workflow to help you get started with Actions
-
-name: Create Theme Files
+name: Build and Release Themes
 
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
+    branches:
+      - main
 
 jobs:
-  build:
+  build-and-release:
     runs-on: ubuntu-latest
 
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v4
+    - name: Checkout Repository
+      uses: actions/checkout@v3
 
-      # Creates a Tar file for each theme
-      - name: Create theme files
-        run: |
-          echo "Building Lavender theme"
-          cd lavender
-          tar -cf Lavender.tar theme.json
-     
-      # Releases all themes.
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions.
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          body: |
-            Update to the Theme.
-          draft: false
-          prerelease: false
+    - name: Build Themes
+      run: |
+        mkdir -p build
+        for dir in */; do
+          # Skip unwanted folders
+          [ "$dir" = ".github/" ] && continue
+          # Skip files in the root directory
+          [ ! -d "$dir" ] && continue
+
+          # Get the theme name from the folder
+          theme_name=$(basename "$dir")
+
+          # Check required files exist
+          if [[ -f "$dir/theme.css" && -f "$dir/theme.json" ]]; then
+            tar -cf "build/${theme_name}.tar" -C "$dir" theme.css theme.json *.png *.jpg *.jpeg
+          else
+            echo "Skipping $theme_name as required files are missing."
+          fi
+        done
+
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      with:
+        tag_name: ${{ github.sha }}
+        release_name: "Themes Release - ${{ github.sha }}"
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Upload Tar Files to Release
+      uses: actions/upload-release-asset@v1
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: build/
+        asset_name: "*.tar"
+        asset_content_type: application/x-tar
