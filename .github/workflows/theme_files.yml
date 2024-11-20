@@ -32,26 +32,14 @@ jobs:
           # Check required files exist
           if [[ -f "$dir/theme.json" ]]; then
             find "$dir" -name "*.png" -o -name "*.jpg" | tar -cf "build/${theme_name}.tar" -C "$dir" theme.css theme.json -T -
+            echo "Built $theme_name successfully."
           else
             echo "Skipping $theme_name as a required file is missing."
           fi
         done
-
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
+        
+    - name: Release
+      uses: softprops/action-gh-release@v2
+      if: startsWith(github.ref, 'refs/tags/')
       with:
-        tag_name: ${{  github.ref_name }}
-        release_name: "Themes Release - ${{ github.ref_name }}"
-        draft: false
-        prerelease: false
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Upload Files to Release
-      uses: actions/upload-release-asset@v1
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: build/
-        asset_name: "*.tar"
-        asset_content_type: application/x-tar
+        files: build/*.tar
